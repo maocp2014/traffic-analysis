@@ -10,11 +10,12 @@ import (
 
 var log = logrus.New()
 
+// 命令行参数，构建参数结构体
 func parseParam() (cmdParams, *string) {
 	// 获取参数
-	logFilePath := flag.String("logFilePath", "/Users/pangee/Public/nginx/logs/dig.log", "log file path")
-	routineNum := flag.Int("routineNum", 5, "consumer numble by goroutine")
-	l := flag.String("l", "/tmp/log", "this programe runtime log target file path")
+	logFilePath := flag.String("logFilePath", "D:\\GoWorkspace\\traffic-analysis\\log-generate\\dig.log", "log file path")
+	routineNum := flag.Int("routineNum", 5, "consumer number by goroutine")
+	l := flag.String("l", "/tmp/log", "this program runtime log target file path")
 	flag.Parse()
 
 	params := cmdParams{*logFilePath, *routineNum}

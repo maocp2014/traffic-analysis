@@ -12,39 +12,46 @@ import (
 	"time"
 )
 
-func logConsumer( logChannel chan string, pvChannel, uvChannel chan urlData ) error {
+// 日志消费
+func logConsumer(logChannel chan string, pvChannel, uvChannel chan urlData) error {
 	for logStr := range logChannel {
 		// 切割日志字符串，扣出打点上报的数据
-		data := cutLogFetchData( logStr )
+		data := cutLogFetchData(logStr)
 
 		// uid
-		// 说明： 课程中模拟生成uid， md5(refer+ua)
-		hasher := md5.New()
-		hasher.Write( []byte( data.refer+data.ua ) )
-		uid := hex.EncodeToString( hasher.Sum(nil) )
+		// 说明：课程中模拟生成uid，md5(refer + ua)
+		harsher := md5.New()
+		harsher.Write([]byte(data.refer + data.ua))
+		uid := hex.EncodeToString(harsher.Sum(nil))
 
 		// 很多解析的工作都可以放到这里完成
 		// ...
 		// ...
 
-		uData := urlData{ data, uid, formatUrl( data.url, data.time ) }
-
+		uData := urlData{data, uid, formatUrl( data.url, data.time )}
+        // 数据塞入 channel
 		pvChannel <- uData
 		uvChannel <- uData
 	}
 	return nil
 }
-func cutLogFetchData( logStr string ) digData {
-	logStr = strings.TrimSpace( logStr )
-	pos1 := str.IndexOf( logStr,  HANDLE_DIG, 0)
-	if pos1==-1 {
+
+// 日志切割
+func cutLogFetchData(logStr string) digData {
+	// 去除空格
+	logStr = strings.TrimSpace(logStr)
+	// 查找索引
+	pos1 := str.IndexOf(logStr,  HANDLE_DIG, 0)
+	if pos1 == -1 {
 		return digData{}
 	}
-	pos1 += len( HANDLE_DIG )
-	pos2 := str.IndexOf( logStr, " HTTP/", pos1 )
-	d := str.Substr( logStr, pos1, pos2-pos1 )
+	pos1 += len(HANDLE_DIG)
+	pos2 := str.IndexOf(logStr, " HTTP/", pos1)
+	// 返回子串
+	d := str.Substr(logStr, pos1, pos2-pos1)
 
-	urlInfo, err := url.Parse( "http://localhost/?"+d )
+	// url.Parse 必须构造成 url
+	urlInfo, err := url.Parse("http://localhost/?" + d)
 	if err != nil {
 		return digData{}
 	}
@@ -56,30 +63,37 @@ func cutLogFetchData( logStr string ) digData {
 		data.Get("ua"),
 	}
 }
-func readFileLinebyLine( params cmdParams, logChannel chan string ) error {
-	fd, err := os.Open( params.logFilePath )
+
+// 读取日志文件
+func readFileLineByLine(params cmdParams, logChannel chan string) error {
+	fd, err := os.Open(params.logFilePath)
 	if err != nil {
-		log.Warningf( "ReadFileLinebyLine can't open file:%s", params.logFilePath )
+		log.Warningf("ReadFileLineByLine can't open file: %s", params.logFilePath)
 		return err
 	}
 	defer fd.Close()
 
 	count := 0
-	bufferRead := bufio.NewReader( fd )
+	// 缓冲读
+	bufferRead := bufio.NewReader(fd)
+
 	for {
-		line, err := bufferRead.ReadString( '\n' )
+		// 读取字符串，以"\n"分割
+		line, err := bufferRead.ReadString('\n')
+		// 塞入channel
 		logChannel <- line
 		count++
-
-		if count%(1000*params.routineNum) == 0 {
-			log.Infof( "ReadFileLinebyLine line: %d", count )
+		// 每 1000 行打印日志
+		if count % (1000*params.routineNum) == 0 {
+			log.Infof("ReadFileLineByLine line: %d", count)
 		}
 		if err != nil {
+			// 文件结尾
 			if err == io.EOF {
 				time.Sleep( 3*time.Second )
-				log.Infof( "ReadFileLinebyLine wait, raedline:%d", count )
+				log.Infof( "ReadFileLineByLine wait, readline: %d", count )
 			} else {
-				log.Warningf( "ReadFileLinebyLine read log error" )
+				log.Warningf( "ReadFileLineByLine read log error" )
 			}
 		}
 	}

@@ -21,7 +21,7 @@ func main() {
 	redisPool := initRedisPool(params)
 
 	// 日志消费者
-	go readFileLinebyLine(params, logChannel)
+	go readFileLineByLine(params, logChannel)
 
 	// 创建一组日志处理
 	for i := 0; i < params.routineNum; i++ {
